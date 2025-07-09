@@ -4,7 +4,7 @@ use Test::Most;
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 
-use DB::Berkeley;
+use_ok('DB::Berkeley');
 
 my $dbfile = "test6.db";
 unlink $dbfile if -e $dbfile;
