@@ -39,6 +39,15 @@ jobs:
         run: |
           cpanm -iqn ExtUtils::MakeMaker Test::Most
           cpanm -iqn --skip-satisfied --installdeps --notest .
+      - name: Make Module
+        env:
+          AUTOMATED_TESTING: 1
+          NO_NETWORK_TESTING: 1
+          NONINTERACTIVE_TESTING: 1
+        run: |
+          # find . -name build.log | xargs cat
+          perl Makefile.PL
+          make
       - name: Run Tests
         env:
           AUTOMATED_TESTING: 1
