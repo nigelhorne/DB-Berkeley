@@ -13,7 +13,7 @@ my $db = DB::Berkeley->new($dbfile, 0, 0666);
 $db->put($_, "val$_") for qw(apple banana cherry);
 
 my %seen;
-while (my $pair = $db->each) {
+while (my $pair = $db->each()) {
 	my ($k, $v) = @$pair;
 	$seen{$k} = $v;
 }

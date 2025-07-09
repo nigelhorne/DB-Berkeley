@@ -12,6 +12,7 @@ t/each.t
 t/eof.t
 t/eol.t
 t/iterator.t
+t/iterator_more.t
 t/iterator_reset.t
 t/pod-synopsis.t
 typemap
