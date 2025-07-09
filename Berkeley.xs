@@ -148,29 +148,24 @@ delete(self, key)
     SV *key
 PREINIT:
     Berk *obj;
+    DB *dbp;
     DBT k;
     char *kptr;
     STRLEN klen;
     int ret;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));
+    obj = (Berk*)SvIV(SvRV(self));
+    dbp = obj->dbp;
     kptr = SvPV(key, klen);
 
     memset(&k, 0, sizeof(DBT));
     k.data = kptr;
     k.size = klen;
 
-    ret = obj->dbp->del(obj->dbp, NULL, &k, 0);  // Attempt to delete
-    if (ret == DB_NOTFOUND) {
-        RETVAL = 0;  // Not found
-    } else if (ret != 0) {
-        croak("db->del failed: %s", db_strerror(ret));
-    } else {
-        RETVAL = 1;  // Deleted
-    }
+    ret = dbp->del(dbp, NULL, &k, 0);
+    RETVAL = (ret == 0) ? 1 : 0;
 OUTPUT:
     RETVAL
-
 
 int
 exists(self, key)
@@ -178,29 +173,24 @@ exists(self, key)
     SV *key
 PREINIT:
     Berk *obj;
+    DB *dbp;
     DBT k, v;
     char *kptr;
     STRLEN klen;
     int ret;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));
+    obj = (Berk*)SvIV(SvRV(self));
+    dbp = obj->dbp;
     kptr = SvPV(key, klen);
 
     memset(&k, 0, sizeof(DBT));
+    memset(&v, 0, sizeof(DBT));
     k.data = kptr;
     k.size = klen;
+    v.flags = DB_DBT_PARTIAL;  // No need to retrieve full value
 
-    memset(&v, 0, sizeof(DBT));
-    v.flags = DB_DBT_PARTIAL;  // We don't need full value
-
-    ret = obj->dbp->get(obj->dbp, NULL, &k, &v, 0);
-    if (ret == DB_NOTFOUND) {
-        RETVAL = 0;
-    } else if (ret != 0) {
-        croak("db->get failed: %s", db_strerror(ret));
-    } else {
-        RETVAL = 1;
-    }
+    ret = dbp->get(dbp, NULL, &k, &v, 0);
+    RETVAL = (ret == 0) ? 1 : 0;
 OUTPUT:
     RETVAL
 
@@ -210,37 +200,52 @@ keys(self)
     SV *self
 PREINIT:
     Berk *obj;
+    DB *dbp;
     DBC *cursor;
-    DBT k, v;
-    int ret;
+    DBT key, val;
     AV *av;
+    int ret;
 CODE:
+    // Get the internal object and database handle
     obj = (Berk *)SvIV(SvRV(self));
+    dbp = obj->dbp;
 
-    ret = obj->dbp->cursor(obj->dbp, NULL, &cursor, 0);
-    if (ret != 0) {
-        croak("db->cursor failed: %s", db_strerror(ret));
-    }
-
+    // Create a new Perl array to store keys
     av = newAV();
 
-    memset(&k, 0, sizeof(DBT));
-    memset(&v, 0, sizeof(DBT));
+    // Initialize the DBT structures
+    memset(&key, 0, sizeof(DBT));
+    memset(&val, 0, sizeof(DBT));
 
-    while ((ret = cursor->get(cursor, &k, &v, DB_NEXT)) == 0) {
-        SV *sv = newSVpvn((char *)k.data, k.size);
-        av_push(av, sv);
+    // Configure the value DBT to avoid fetching data (for performance)
+    val.flags = DB_DBT_PARTIAL;
+
+    // Open a new cursor for iterating over the DB
+    ret = dbp->cursor(dbp, NULL, &cursor, 0);
+    if (ret != 0) {
+        croak("DB::Berkeley keys(): cursor creation failed: %s", db_strerror(ret));
     }
 
+    // Iterate over all key-value pairs using the cursor
+    while ((ret = cursor->get(cursor, &key, &val, DB_NEXT)) == 0) {
+        // Push the key as a Perl scalar into the array
+        av_push(av, newSVpvn((char *)key.data, key.size));
+    }
+
+    // Check if iteration ended cleanly
     if (ret != DB_NOTFOUND) {
         cursor->close(cursor);
-        croak("cursor->get failed: %s", db_strerror(ret));
+        croak("DB::Berkeley keys(): cursor get failed: %s", db_strerror(ret));
     }
 
+    // Clean up
     cursor->close(cursor);
+
+    // Return the array of keys
     RETVAL = av;
 OUTPUT:
     RETVAL
+
 
 AV *
 values(self)
