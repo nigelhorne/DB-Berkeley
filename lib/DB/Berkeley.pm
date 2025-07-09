@@ -17,6 +17,8 @@ Version 0.02
 
 our $VERSION = '0.02';
 
+XSLoader::load('DB::Berkeley', $VERSION);
+
 =head1 DESCRIPTION
 
 A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
@@ -80,10 +82,6 @@ Alias for C<set>. Stores a key-value pair in the database.
 =head2 fetch($key)
 
 Alias for C<get>. Retrieves a value for the given key.
-
-=cut
-
-XSLoader::load('DB::Berkeley', $VERSION);
 
 =head1 AUTHOR
 
