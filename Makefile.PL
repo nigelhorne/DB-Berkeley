@@ -6,4 +6,5 @@ WriteMakefile(
     LIBS         => ['-ldb'],      # Link against libdb
     INC          => '',            # No special include paths
     LICENSE      => 'GPL',
+    TYPEMAPS => ['typemap']
 );

@@ -8,13 +8,13 @@ typedef struct {
     DB *dbp;
 } DB_Berkeley;
 
-MODULE = DB::Berkeley  PACKAGE = DB::Berkeley
+/* tell XS how to treat DB_Berkeley* as an object */
+MODULE = DB::Berkeley    PACKAGE = DB::Berkeley
+
+PROTOTYPES: ENABLE
 
 DB_Berkeley *
-_open(filename, flags, mode)
-    char *filename
-    int flags
-    int mode
+_open(char *filename, int flags, int mode)
 PREINIT:
     DB *dbp;
     int ret;
@@ -35,8 +35,7 @@ OUTPUT:
     RETVAL
 
 void
-DESTROY(self)
-    DB_Berkeley *self
+DESTROY(DB_Berkeley *self)
 CODE:
     if (self->dbp) {
         self->dbp->close(self->dbp, 0);
@@ -45,10 +44,7 @@ CODE:
     Safefree(self);
 
 int
-put(self, key, value)
-    DB_Berkeley *self
-    SV *key
-    SV *value
+put(DB_Berkeley *self, SV *key, SV *value)
 PREINIT:
     DBT k, v;
     STRLEN klen, vlen;
@@ -67,9 +63,7 @@ OUTPUT:
     RETVAL
 
 SV *
-get(self, key)
-    DB_Berkeley *self
-    SV *key
+get(DB_Berkeley *self, SV *key)
 PREINIT:
     DBT k, v;
     STRLEN klen;
@@ -93,9 +87,7 @@ OUTPUT:
     RETVAL
 
 int
-delete(self, key)
-    DB_Berkeley *self
-    SV *key
+delete(DB_Berkeley *self, SV *key)
 PREINIT:
     DBT k;
     STRLEN klen;
@@ -108,3 +100,4 @@ CODE:
     RETVAL = self->dbp->del(self->dbp, NULL, &k, 0);
 OUTPUT:
     RETVAL
+
