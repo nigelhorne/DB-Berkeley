@@ -4,6 +4,10 @@
 
 #include <db.h>
 #include <string.h>
+#include <stdio.h>
+
+// #define DEBUG_LOG(fmt, ...) fprintf(stderr, "[DB::Berkeley DEBUG] " fmt "\n", ##__VA_ARGS__)
+#define	DEBUG_LOG
 
 /* 
  * Internal C struct to wrap a Berkeley DB handle.
@@ -55,6 +59,8 @@ PREINIT:
     SV *ret_sv;
 CODE:
 
+    DEBUG_LOG("new() called with file='%s', flags=%d, mode=%o", file, flags, mode);
+
     // Use default file mode if not specified
     if (mode == 0)
         mode = 0666;
@@ -67,9 +73,12 @@ CODE:
         croak("Out of memory");
     }
     obj->dbp = dbp;
+    obj->cursor = NULL;
 
     // Bless the object reference
     ret_sv = sv_setref_pv(newSV(0), class, (void *)obj);
+    DEBUG_LOG("DB handle created at %p", obj);
+
     RETVAL = ret_sv;
 OUTPUT:
     RETVAL
@@ -389,13 +398,18 @@ PREINIT:
     int ret;
 CODE:
     obj = (Berk *)SvIV(SvRV(self));
+    DEBUG_LOG("DESTROY() called");
     if (obj) {
         if (obj->cursor) {
+	    DEBUG_LOG("DESTROY() closing cursor");
             obj->cursor->close(obj->cursor);
             obj->cursor = NULL;
         }
         if (obj->dbp) {
+	    DEBUG_LOG("DESTROY() closing handle");
             obj->dbp->close(obj->dbp, 0);  // Close DB handle
         }
+	DEBUG_LOG("DESTROY() freeing the structure");
         free(obj);  // Free the struct
     }
+    DEBUG_LOG("DESTROY() left");
