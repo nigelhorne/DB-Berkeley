@@ -9,8 +9,12 @@ on:
     tags-ignore:
       - '*'
   pull_request:
+permissions:
+    contents: read
 jobs:
   build:
+    permissions:
+      contents: read
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
