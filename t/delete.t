@@ -23,7 +23,7 @@ ok($db->exists('beta'),  'beta exists');
 ok($db->exists('gamma'), 'gamma exists');
 
 # keys() should return all three
-my @keys = sort $db->keys;
+my @keys = sort @{$db->keys()};
 cmp_deeply(\@keys, [qw(alpha beta gamma)], 'keys() returned all keys');
 
 # Delete one
@@ -33,7 +33,7 @@ ok($db->delete('beta'), 'deleted beta');
 ok(!$db->exists('beta'), 'beta no longer exists');
 
 # keys() should return remaining two
-@keys = sort $db->keys;
+@keys = sort @{$db->keys()};
 cmp_deeply(\@keys, [qw(alpha gamma)], 'keys() updated correctly after delete');
 
 # Delete non-existing key returns 0

@@ -81,15 +81,17 @@ put(self, key, value)
     SV *value
 PREINIT:
     Berk *obj;
+    DB *dbp;
     DBT k, v;
     char *kptr, *vptr;
     STRLEN klen, vlen;
     int ret;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));  // Extract the Berk* from the Perl object
+    obj = (Berk *)SvIV(SvRV(self));
+    dbp = obj->dbp;
 
-    kptr = SvPV(key, klen);   // Get raw key bytes
-    vptr = SvPV(value, vlen); // Get raw value bytes
+    kptr = SvPV(key, klen);
+    vptr = SvPV(value, vlen);
 
     memset(&k, 0, sizeof(DBT));
     k.data = kptr;
@@ -99,9 +101,9 @@ CODE:
     v.data = vptr;
     v.size = vlen;
 
-    ret = obj->dbp->put(obj->dbp, NULL, &k, &v, 0);  // Perform DB->put
+    ret = dbp->put(dbp, NULL, &k, &v, 0);
     if (ret != 0) {
-        croak("db->put failed: %s", db_strerror(ret));
+        croak("DB::Berkeley put(): %s", db_strerror(ret));
     }
 
     RETVAL = 1;
@@ -194,7 +196,6 @@ CODE:
 OUTPUT:
     RETVAL
 
-
 AV *
 keys(self)
     SV *self
@@ -206,46 +207,35 @@ PREINIT:
     AV *av;
     int ret;
 CODE:
-    // Get the internal object and database handle
     obj = (Berk *)SvIV(SvRV(self));
     dbp = obj->dbp;
-
-    // Create a new Perl array to store keys
     av = newAV();
 
-    // Initialize the DBT structures
+    // Clear key and value structures
     memset(&key, 0, sizeof(DBT));
     memset(&val, 0, sizeof(DBT));
 
-    // Configure the value DBT to avoid fetching data (for performance)
-    val.flags = DB_DBT_PARTIAL;
-
-    // Open a new cursor for iterating over the DB
+    // Open a cursor
     ret = dbp->cursor(dbp, NULL, &cursor, 0);
     if (ret != 0) {
-        croak("DB::Berkeley keys(): cursor creation failed: %s", db_strerror(ret));
+        croak("DB::Berkeley keys(): cursor open failed: %s", db_strerror(ret));
     }
 
-    // Iterate over all key-value pairs using the cursor
+    // Iterate over the database using the cursor
     while ((ret = cursor->get(cursor, &key, &val, DB_NEXT)) == 0) {
-        // Push the key as a Perl scalar into the array
         av_push(av, newSVpvn((char *)key.data, key.size));
     }
 
-    // Check if iteration ended cleanly
+    // DB_NOTFOUND means clean end
     if (ret != DB_NOTFOUND) {
         cursor->close(cursor);
-        croak("DB::Berkeley keys(): cursor get failed: %s", db_strerror(ret));
+        croak("DB::Berkeley keys(): cursor iteration failed: %s", db_strerror(ret));
     }
 
-    // Clean up
     cursor->close(cursor);
-
-    // Return the array of keys
     RETVAL = av;
 OUTPUT:
     RETVAL
-
 
 AV *
 values(self)
