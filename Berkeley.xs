@@ -299,38 +299,6 @@ CODE:
         croak("Failed to create cursor: %s", db_strerror(ret));
     }
 
-SV *
-each(self)
-    SV *self
-PREINIT:
-    Berk *obj;
-    DBT k, v;
-    int ret;
-    AV *pair;
-CODE:
-    obj = (Berk *)SvIV(SvRV(self));
-
-    if (!obj->cursor) {
-        croak("Iterator not initialized. Call rewind() first.");
-    }
-
-    memset(&k, 0, sizeof(DBT));
-    memset(&v, 0, sizeof(DBT));
-
-    ret = obj->cursor->get(obj->cursor, &k, &v, DB_NEXT);
-    if (ret == DB_NOTFOUND) {
-        RETVAL = &PL_sv_undef;
-    } else if (ret != 0) {
-        croak("cursor->get failed: %s", db_strerror(ret));
-    } else {
-        pair = newAV();
-        av_push(pair, newSVpvn((char *)k.data, k.size));
-        av_push(pair, newSVpvn((char *)v.data, v.size));
-        RETVAL = newRV_noinc((SV *)pair);
-    }
-OUTPUT:
-    RETVAL
-
 void
 iterator_reset(self)
     SV *self
@@ -378,6 +346,45 @@ CODE:
 OUTPUT:
     RETVAL
 
+SV *
+each(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    DBT k, v;
+    int ret;
+    AV *av;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+
+    if (!obj->cursor) {
+        // First call to each() – create cursor
+        ret = obj->dbp->cursor(obj->dbp, NULL, &obj->cursor, 0);
+        if (ret != 0) {
+            croak("each: cursor creation failed: %s", db_strerror(ret));
+        }
+    }
+
+    memset(&k, 0, sizeof(DBT));
+    memset(&v, 0, sizeof(DBT));
+    v.flags = DB_DBT_MALLOC;
+
+    ret = obj->cursor->get(obj->cursor, &k, &v, DB_NEXT);
+    if (ret == DB_NOTFOUND) {
+        obj->cursor->close(obj->cursor);
+        obj->cursor = NULL;
+        RETVAL = &PL_sv_undef;
+    } else if (ret != 0) {
+        croak("each: cursor->get failed: %s", db_strerror(ret));
+    } else {
+        av = newAV();
+        av_push(av, newSVpvn((char *)k.data, k.size));
+        av_push(av, newSVpvn((char *)v.data, v.size));
+        free(v.data);
+        RETVAL = newRV_noinc((SV *)av);
+    }
+OUTPUT:
+    RETVAL
 
 void
 DESTROY(self)

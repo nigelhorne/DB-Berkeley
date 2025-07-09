@@ -17,16 +17,16 @@ $db->put($_, uc($_)) for qw(one two three);
 my @vals = sort @{$db->values};
 cmp_deeply(\@vals, [qw(ONE THREE TWO)], 'values() returns all expected');
 
-$db->rewind;
+$db->rewind();
 my @pairs;
 while (my $pair = $db->each) {
-    push @pairs, $pair;
+	push @pairs, $pair;
 }
 
 cmp_deeply(
-    [ sort map { join '=', @$_ } @pairs ],
-    [ 'one=ONE', 'three=THREE', 'two=TWO' ],
-    'each() returns expected key=value pairs'
+	[ sort map { join '=', @$_ } @pairs ],
+	[ 'one=ONE', 'three=THREE', 'two=TWO' ],
+	'each() returns expected key=value pairs'
 );
 
 done_testing();

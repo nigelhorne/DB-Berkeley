@@ -18,8 +18,8 @@ $db->iterator_reset;
 
 my @keys;
 while (my $k = $db->next_key) {
-    push @keys, $k;
-}
+	push @keys, $k;
+	}
 
 cmp_deeply([sort @keys], [qw(a b c)], 'next_key returned all keys');
 
