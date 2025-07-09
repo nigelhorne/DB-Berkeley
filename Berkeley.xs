@@ -1,103 +1,153 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-
 #include <db.h>
+#include <string.h>
 
+/* Define internal struct to hold DB handle */
 typedef struct {
     DB *dbp;
-} DB_Berkeley;
+} Berk;
 
-/* tell XS how to treat DB_Berkeley* as an object */
-MODULE = DB::Berkeley    PACKAGE = DB::Berkeley
-
-PROTOTYPES: ENABLE
-
-DB_Berkeley *
-_open(char *filename, int flags, int mode)
-PREINIT:
+/* Helper C function to open a Berkeley DB */
+static DB *
+_bdb_open(const char *file, u_int32_t flags, int mode) {
     DB *dbp;
     int ret;
-    DB_Berkeley *handle;
-CODE:
-    ret = db_create(&dbp, NULL, 0);
-    if (ret != 0)
+
+    if ((ret = db_create(&dbp, NULL, 0)) != 0) {
         croak("db_create failed: %s", db_strerror(ret));
+    }
 
-    ret = dbp->open(dbp, NULL, filename, NULL, DB_HASH, flags, mode);
-    if (ret != 0)
-        croak("db->open failed: %s", db_strerror(ret));
+    if ((ret = dbp->open(dbp, NULL, file, NULL, DB_HASH, flags | DB_CREATE, mode)) != 0) {
+        int err = ret;
+        dbp->close(dbp, 0);
+        croak("DB->open('%s') failed: %s", file, db_strerror(err));
+    }
 
-    Newxz(handle, 1, DB_Berkeley);
-    handle->dbp = dbp;
-    RETVAL = handle;
+    return dbp;
+}
+
+MODULE = DB::Berkeley    PACKAGE = DB::Berkeley
+PROTOTYPES: ENABLE
+
+SV *
+new(class, file, flags, mode)
+    char *class
+    char *file
+    int flags
+    int mode
+PREINIT:
+    Berk *obj;
+    DB *dbp;
+    SV *ret_sv;
+CODE:
+{
+    if (mode == 0)
+        mode = 0666;
+
+    dbp = _bdb_open(file, flags, mode);
+
+    obj = (Berk *)malloc(sizeof(Berk));
+    if (!obj) {
+        dbp->close(dbp, 0);
+        croak("Out of memory");
+    }
+    obj->dbp = dbp;
+
+    ret_sv = sv_setref_pv(newSV(0), class, (void *)obj);
+    RETVAL = ret_sv;
+}
 OUTPUT:
     RETVAL
 
-void
-DESTROY(DB_Berkeley *self)
-CODE:
-    if (self->dbp) {
-        self->dbp->close(self->dbp, 0);
-        self->dbp = NULL;
-    }
-    Safefree(self);
-
 int
-put(DB_Berkeley *self, SV *key, SV *value)
+put(self, key, value)
+    SV *self
+    SV *key
+    SV *value
 PREINIT:
+    Berk *obj;
+    DB *dbp;
     DBT k, v;
+    char *kptr, *vptr;
     STRLEN klen, vlen;
-    char *kptr = SvPV(key, klen);
-    char *vptr = SvPV(value, vlen);
+    int ret;
 CODE:
-    memset(&k, 0, sizeof(k));
-    memset(&v, 0, sizeof(v));
+{
+    obj = (Berk *)SvIV(SvRV(self));
+    dbp = obj->dbp;
+
+    kptr = SvPV(key, klen);
+    vptr = SvPV(value, vlen);
+
+    memset(&k, 0, sizeof(DBT));
     k.data = kptr;
     k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
     v.data = vptr;
     v.size = vlen;
 
-    RETVAL = self->dbp->put(self->dbp, NULL, &k, &v, 0);
+    ret = dbp->put(dbp, NULL, &k, &v, 0);
+    if (ret != 0) {
+        croak("DB->put error: %s", db_strerror(ret));
+    }
+    RETVAL = 1;
+}
 OUTPUT:
     RETVAL
 
 SV *
-get(DB_Berkeley *self, SV *key)
+get(self, key)
+    SV *self
+    SV *key
 PREINIT:
+    Berk *obj;
+    DB *dbp;
     DBT k, v;
+    char *kptr;
     STRLEN klen;
-    char *kptr = SvPV(key, klen);
     int ret;
 CODE:
-    memset(&k, 0, sizeof(k));
-    memset(&v, 0, sizeof(v));
+{
+    obj = (Berk *)SvIV(SvRV(self));
+    dbp = obj->dbp;
+
+    kptr = SvPV(key, klen);
+
+    memset(&k, 0, sizeof(DBT));
     k.data = kptr;
     k.size = klen;
 
-    ret = self->dbp->get(self->dbp, NULL, &k, &v, 0);
+    memset(&v, 0, sizeof(DBT));
+    v.flags = DB_DBT_MALLOC;
+
+    ret = dbp->get(dbp, NULL, &k, &v, 0);
     if (ret == DB_NOTFOUND) {
         RETVAL = &PL_sv_undef;
     } else if (ret != 0) {
-        croak("get failed: %s", db_strerror(ret));
+        croak("DB->get error: %s", db_strerror(ret));
     } else {
-        RETVAL = newSVpvn(v.data, v.size);
+        RETVAL = newSVpvn((char *)v.data, v.size);
+        free(v.data);
     }
+}
 OUTPUT:
     RETVAL
 
-int
-delete(DB_Berkeley *self, SV *key)
+void
+DESTROY(self)
+    SV *self
 PREINIT:
-    DBT k;
-    STRLEN klen;
-    char *kptr = SvPV(key, klen);
+    Berk *obj;
 CODE:
-    memset(&k, 0, sizeof(k));
-    k.data = kptr;
-    k.size = klen;
-
-    RETVAL = self->dbp->del(self->dbp, NULL, &k, 0);
-OUTPUT:
-    RETVAL
-
+{
+    obj = (Berk *)SvIV(SvRV(self));
+    if (obj) {
+        if (obj->dbp) {
+            obj->dbp->close(obj->dbp, 0);
+        }
+        free(obj);
+    }
+}
