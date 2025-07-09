@@ -14,8 +14,9 @@
  * We'll store a pointer to this inside a Perl scalar reference.
  */
 typedef struct {
-	DB *dbp;  // Pointer to Berkeley DB handle
-	DBC *cursor; // for iterator
+	DB	*dbp;  // Pointer to Berkeley DB handle
+	DBC	*cursor; // for iterator
+	int	readonly;
 } Berk;
 
 /*
@@ -42,6 +43,41 @@ _bdb_open(const char *file, u_int32_t flags, int mode) {
     }
 
     return dbp;
+}
+
+static int
+_bdb_put(SV *self, SV *key, SV *value) {
+    Berk *obj;
+    DB *dbp;
+    DBT k, v;
+    char *kptr, *vptr;
+    STRLEN klen, vlen;
+    int ret;
+
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+    dbp = obj->dbp;
+
+    if (obj->readonly) {
+        croak("DB is opened read-only; cannot perform put operation");
+    }
+
+    kptr = SvPV(key, klen);
+    vptr = SvPV(value, vlen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
+    v.data = vptr;
+    v.size = vlen;
+
+    ret = dbp->put(dbp, NULL, &k, &v, 0);
+    if (ret != 0) {
+        croak("DB->put error: %s", db_strerror(ret));
+    }
+
+    return 1;
 }
 
 MODULE = DB::Berkeley    PACKAGE = DB::Berkeley
@@ -75,6 +111,10 @@ CODE:
     obj->dbp = dbp;
     obj->cursor = NULL;
 
+    if(flags&DB_RDONLY) {
+    	obj->readonly = 1;
+    }
+
     // Bless the object reference
     ret_sv = sv_setref_pv(newSV(0), class, (void *)obj);
     DEBUG_LOG("DB handle created at %p", obj);
@@ -88,35 +128,8 @@ put(self, key, value)
     SV *self
     SV *key
     SV *value
-PREINIT:
-    Berk *obj;
-    DB *dbp;
-    DBT k, v;
-    char *kptr, *vptr;
-    STRLEN klen, vlen;
-    int ret;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));
-
-    dbp = obj->dbp;
-
-    kptr = SvPV(key, klen);
-    vptr = SvPV(value, vlen);
-
-    memset(&k, 0, sizeof(DBT));
-    k.data = kptr;
-    k.size = klen;
-
-    memset(&v, 0, sizeof(DBT));
-    v.data = vptr;
-    v.size = vlen;
-
-    ret = dbp->put(dbp, NULL, &k, &v, 0);
-    if (ret != 0) {
-        croak("DB::Berkeley put(): %s", db_strerror(ret));
-    }
-
-    RETVAL = 1;
+    RETVAL = _bdb_put(self, key, value);
 OUTPUT:
     RETVAL
 
@@ -396,33 +409,8 @@ store(self, key, value)
     SV *self
     SV *key
     SV *value
-PREINIT:
-    Berk *obj;
-    DB *dbp;
-    DBT k, v;
-    char *kptr, *vptr;
-    STRLEN klen, vlen;
-    int ret;
 CODE:
-    obj = (Berk*)SvIV((SV*)SvRV(self));
-    dbp = obj->dbp;
-
-    kptr = SvPV(key, klen);
-    vptr = SvPV(value, vlen);
-
-    memset(&k, 0, sizeof(DBT));
-    k.data = kptr;
-    k.size = klen;
-
-    memset(&v, 0, sizeof(DBT));
-    v.data = vptr;
-    v.size = vlen;
-
-    ret = dbp->put(dbp, NULL, &k, &v, 0);
-    if (ret != 0) {
-        croak("DB->store error: %s", db_strerror(ret));
-    }
-    RETVAL = 1;
+    RETVAL = _bdb_put(self, key, value);
 OUTPUT:
     RETVAL
 
@@ -431,33 +419,8 @@ set(self, key, value)
     SV *self
     SV *key
     SV *value
-PREINIT:
-    Berk *obj;
-    DB *dbp;
-    DBT k, v;
-    char *kptr, *vptr;
-    STRLEN klen, vlen;
-    int ret;
 CODE:
-    obj = (Berk*)SvIV((SV*)SvRV(self));
-    dbp = obj->dbp;
-
-    kptr = SvPV(key, klen);
-    vptr = SvPV(value, vlen);
-
-    memset(&k, 0, sizeof(DBT));
-    k.data = kptr;
-    k.size = klen;
-
-    memset(&v, 0, sizeof(DBT));
-    v.data = vptr;
-    v.size = vlen;
-
-    ret = dbp->put(dbp, NULL, &k, &v, 0);
-    if (ret != 0) {
-        croak("DB->set error: %s", db_strerror(ret));
-    }
-    RETVAL = 1;
+    RETVAL = _bdb_put(self, key, value);
 OUTPUT:
     RETVAL
 
