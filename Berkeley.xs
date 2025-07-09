@@ -97,6 +97,7 @@ PREINIT:
     int ret;
 CODE:
     obj = (Berk *)SvIV(SvRV(self));
+
     dbp = obj->dbp;
 
     kptr = SvPV(key, klen);

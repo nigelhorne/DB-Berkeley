@@ -11,11 +11,11 @@ DB::Berkeley - XS-based OO Berkeley DB HASH interface
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 DESCRIPTION
 
@@ -139,7 +139,7 @@ L<http://deps.cpantesters.org/?module=DB::Berkeley>
 
 =head1 LICENCE AND COPYRIGHT
 
-Copyright 2010-2025 Nigel Horne.
+Copyright 2025 Nigel Horne.
 
 Usage is subject to licence terms.
 

@@ -4,7 +4,7 @@ DB::Berkeley - XS-based OO Berkeley DB HASH interface
 
 # VERSION
 
-Version 0.01
+Version 0.02
 
 # DESCRIPTION
 
@@ -56,6 +56,20 @@ DB\_File works, I just prefer this API.
 
     # Automatic cleanup when $db is destroyed
 
+# METHODS
+
+## store($key, $value)
+
+Alias for `put`. Stores a key-value pair in the database.
+
+## set($key, $value)
+
+Alias for `set`. Stores a key-value pair in the database.
+
+## fetch($key)
+
+Alias for `get`. Retrieves a value for the given key.
+
 # AUTHOR
 
 Nigel Horne, `<njh at nigelhorne.com>`
@@ -102,7 +116,7 @@ You can also look for information at:
 
 # LICENCE AND COPYRIGHT
 
-Copyright 2010-2025 Nigel Horne.
+Copyright 2025 Nigel Horne.
 
 Usage is subject to licence terms.
 
