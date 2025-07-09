@@ -20,11 +20,46 @@ our $VERSION = '0.01';
 
     use DB::Berkeley;
 
-    my $db = DB::Berkeley->new(Filename => 'my.db');
+    # Open or create a Berkeley DB HASH file
+    my $db = DB::Berkeley->new("mydata.db", 0, 0666);
 
-    $db->put('foo', 'bar');
-    my $val = $db->get('foo');
-    $db->delete('foo');
+    # Store key-value pairs
+    $db->put("alpha", "A");
+    $db->put("beta",  "B");
+    $db->put("gamma", "G");
+
+    # Retrieve a value
+    my $val = $db->get("beta");  # "B"
+
+    # Check existence
+    if ($db->exists("alpha")) {
+        print "alpha is present\n";
+    }
+
+    # Delete a key
+    $db->delete("gamma");
+
+    # Get all keys (as arrayref)
+    my $keys = $db->keys;        # returns arrayref
+    my @sorted = sort @$keys;
+
+    # Get all values (as arrayref)
+    my $vals = $db->values;      # returns arrayref
+
+    # Iterate using each-style interface
+    $db->iterator_reset;
+    while (my ($k, $v) = $db->each) {
+        print "$k => $v\n";
+    }
+
+    # Use low-level iteration
+    $db->iterator_reset;
+    while (defined(my $key = $db->next_key)) {
+        my $value = $db->get($key);
+        print "$key: $value\n";
+    }
+
+    # Automatic cleanup when $db is destroyed
 
 =head1 DESCRIPTION
 
