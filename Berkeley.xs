@@ -1,28 +1,39 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
+
 #include <db.h>
 #include <string.h>
 
-/* Define internal struct to hold DB handle */
+/* 
+ * Internal C struct to wrap a Berkeley DB handle.
+ * We'll store a pointer to this inside a Perl scalar reference.
+ */
 typedef struct {
-    DB *dbp;
+    DB *dbp;  // Pointer to Berkeley DB handle
 } Berk;
 
-/* Helper C function to open a Berkeley DB */
+/*
+ * Helper function to open a Berkeley DB file as a HASH.
+ * Takes filename, flags, and mode.
+ * Dies (croaks) on failure.
+ */
 static DB *
 _bdb_open(const char *file, u_int32_t flags, int mode) {
     DB *dbp;
     int ret;
 
-    if ((ret = db_create(&dbp, NULL, 0)) != 0) {
+    // Create the database handle
+    ret = db_create(&dbp, NULL, 0);
+    if (ret != 0) {
         croak("db_create failed: %s", db_strerror(ret));
     }
 
-    if ((ret = dbp->open(dbp, NULL, file, NULL, DB_HASH, flags | DB_CREATE, mode)) != 0) {
-        int err = ret;
+    // Open the database file as a HASH type
+    ret = dbp->open(dbp, NULL, file, NULL, DB_HASH, flags | DB_CREATE, mode);
+    if (ret != 0) {
         dbp->close(dbp, 0);
-        croak("DB->open('%s') failed: %s", file, db_strerror(err));
+        croak("db->open failed: %s", db_strerror(ret));
     }
 
     return dbp;
@@ -42,11 +53,12 @@ PREINIT:
     DB *dbp;
     SV *ret_sv;
 CODE:
-{
+
+    // Use default file mode if not specified
     if (mode == 0)
         mode = 0666;
 
-    dbp = _bdb_open(file, flags, mode);
+    dbp = _bdb_open(file, flags, mode);  // Open Berkeley DB file
 
     obj = (Berk *)malloc(sizeof(Berk));
     if (!obj) {
@@ -55,9 +67,9 @@ CODE:
     }
     obj->dbp = dbp;
 
+    // Bless the object reference
     ret_sv = sv_setref_pv(newSV(0), class, (void *)obj);
     RETVAL = ret_sv;
-}
 OUTPUT:
     RETVAL
 
@@ -68,18 +80,15 @@ put(self, key, value)
     SV *value
 PREINIT:
     Berk *obj;
-    DB *dbp;
     DBT k, v;
     char *kptr, *vptr;
     STRLEN klen, vlen;
     int ret;
 CODE:
-{
-    obj = (Berk *)SvIV(SvRV(self));
-    dbp = obj->dbp;
+    obj = (Berk *)SvIV(SvRV(self));  // Extract the Berk* from the Perl object
 
-    kptr = SvPV(key, klen);
-    vptr = SvPV(value, vlen);
+    kptr = SvPV(key, klen);   // Get raw key bytes
+    vptr = SvPV(value, vlen); // Get raw value bytes
 
     memset(&k, 0, sizeof(DBT));
     k.data = kptr;
@@ -89,12 +98,12 @@ CODE:
     v.data = vptr;
     v.size = vlen;
 
-    ret = dbp->put(dbp, NULL, &k, &v, 0);
+    ret = obj->dbp->put(obj->dbp, NULL, &k, &v, 0);  // Perform DB->put
     if (ret != 0) {
-        croak("DB->put error: %s", db_strerror(ret));
+        croak("db->put failed: %s", db_strerror(ret));
     }
+
     RETVAL = 1;
-}
 OUTPUT:
     RETVAL
 
@@ -104,35 +113,31 @@ get(self, key)
     SV *key
 PREINIT:
     Berk *obj;
-    DB *dbp;
     DBT k, v;
     char *kptr;
     STRLEN klen;
     int ret;
 CODE:
-{
     obj = (Berk *)SvIV(SvRV(self));
-    dbp = obj->dbp;
 
-    kptr = SvPV(key, klen);
+    kptr = SvPV(key, klen);  // Extract raw key string
 
     memset(&k, 0, sizeof(DBT));
     k.data = kptr;
     k.size = klen;
 
     memset(&v, 0, sizeof(DBT));
-    v.flags = DB_DBT_MALLOC;
+    v.flags = DB_DBT_MALLOC;  // Let DB allocate value buffer
 
-    ret = dbp->get(dbp, NULL, &k, &v, 0);
+    ret = obj->dbp->get(obj->dbp, NULL, &k, &v, 0);  // Perform DB->get
     if (ret == DB_NOTFOUND) {
         RETVAL = &PL_sv_undef;
     } else if (ret != 0) {
-        croak("DB->get error: %s", db_strerror(ret));
+        croak("db->get failed: %s", db_strerror(ret));
     } else {
-        RETVAL = newSVpvn((char *)v.data, v.size);
+        RETVAL = newSVpvn((char *)v.data, v.size);  // Return as Perl scalar
         free(v.data);
     }
-}
 OUTPUT:
     RETVAL
 
@@ -142,12 +147,10 @@ DESTROY(self)
 PREINIT:
     Berk *obj;
 CODE:
-{
     obj = (Berk *)SvIV(SvRV(self));
     if (obj) {
         if (obj->dbp) {
-            obj->dbp->close(obj->dbp, 0);
+            obj->dbp->close(obj->dbp, 0);  // Close DB handle
         }
-        free(obj);
+        free(obj);  // Free the struct
     }
-}

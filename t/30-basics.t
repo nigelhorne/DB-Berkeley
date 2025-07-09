@@ -1,0 +1,28 @@
+use strict;
+use warnings;
+use Test::Most;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use DB::Berkeley;
+
+my $dbfile = "test.db";
+
+# Clean up any pre-existing file
+unlink $dbfile if -e $dbfile;
+
+ok(my $db = DB::Berkeley->new($dbfile, 0, 0666), 'Created DB::Berkeley object');
+
+ok($db->put("foo", "bar"), 'Inserted key "foo" with value "bar"');
+
+is($db->get("foo"), "bar", 'Retrieved correct value for key "foo"');
+
+is($db->get("missing"), undef, 'Missing key returns undef');
+
+done_testing();
+
+# Clean up
+END {
+    unlink $dbfile if -e $dbfile;
+}
