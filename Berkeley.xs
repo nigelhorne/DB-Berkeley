@@ -141,6 +141,107 @@ CODE:
 OUTPUT:
     RETVAL
 
+int
+delete(self, key)
+    SV *self
+    SV *key
+PREINIT:
+    Berk *obj;
+    DBT k;
+    char *kptr;
+    STRLEN klen;
+    int ret;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+    kptr = SvPV(key, klen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    ret = obj->dbp->del(obj->dbp, NULL, &k, 0);  // Attempt to delete
+    if (ret == DB_NOTFOUND) {
+        RETVAL = 0;  // Not found
+    } else if (ret != 0) {
+        croak("db->del failed: %s", db_strerror(ret));
+    } else {
+        RETVAL = 1;  // Deleted
+    }
+OUTPUT:
+    RETVAL
+
+
+int
+exists(self, key)
+    SV *self
+    SV *key
+PREINIT:
+    Berk *obj;
+    DBT k, v;
+    char *kptr;
+    STRLEN klen;
+    int ret;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+    kptr = SvPV(key, klen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
+    v.flags = DB_DBT_PARTIAL;  // We don't need full value
+
+    ret = obj->dbp->get(obj->dbp, NULL, &k, &v, 0);
+    if (ret == DB_NOTFOUND) {
+        RETVAL = 0;
+    } else if (ret != 0) {
+        croak("db->get failed: %s", db_strerror(ret));
+    } else {
+        RETVAL = 1;
+    }
+OUTPUT:
+    RETVAL
+
+
+AV *
+keys(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    DBC *cursor;
+    DBT k, v;
+    int ret;
+    AV *av;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+
+    ret = obj->dbp->cursor(obj->dbp, NULL, &cursor, 0);
+    if (ret != 0) {
+        croak("db->cursor failed: %s", db_strerror(ret));
+    }
+
+    av = newAV();
+
+    memset(&k, 0, sizeof(DBT));
+    memset(&v, 0, sizeof(DBT));
+
+    while ((ret = cursor->get(cursor, &k, &v, DB_NEXT)) == 0) {
+        SV *sv = newSVpvn((char *)k.data, k.size);
+        av_push(av, sv);
+    }
+
+    if (ret != DB_NOTFOUND) {
+        cursor->close(cursor);
+        croak("cursor->get failed: %s", db_strerror(ret));
+    }
+
+    cursor->close(cursor);
+    RETVAL = av;
+OUTPUT:
+    RETVAL
+
+
 void
 DESTROY(self)
     SV *self

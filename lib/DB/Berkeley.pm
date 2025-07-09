@@ -22,9 +22,9 @@ our $VERSION = '0.01';
 
     my $db = DB::Berkeley->new(Filename => 'my.db');
 
-    $db->put("foo", "bar");
-    my $val = $db->get("foo");
-    $db->delete("foo");
+    $db->put('foo', 'bar');
+    my $val = $db->get('foo');
+    $db->delete('foo');
 
 =head1 DESCRIPTION
 
