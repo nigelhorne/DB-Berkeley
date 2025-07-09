@@ -331,6 +331,53 @@ CODE:
 OUTPUT:
     RETVAL
 
+void
+iterator_reset(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    int ret;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+
+    if (obj->cursor) {
+        obj->cursor->close(obj->cursor);
+        obj->cursor = NULL;
+    }
+
+    ret = obj->dbp->cursor(obj->dbp, NULL, &obj->cursor, 0);
+    if (ret != 0) {
+        croak("iterator_reset: Failed to create cursor: %s", db_strerror(ret));
+    }
+
+SV *
+next_key(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    DBT k, v;
+    int ret;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+
+    if (!obj->cursor) {
+        croak("Iterator not initialized. Call iterator_reset() first.");
+    }
+
+    memset(&k, 0, sizeof(DBT));
+    memset(&v, 0, sizeof(DBT));
+
+    ret = obj->cursor->get(obj->cursor, &k, &v, DB_NEXT);
+    if (ret == DB_NOTFOUND) {
+        RETVAL = &PL_sv_undef;
+    } else if (ret != 0) {
+        croak("next_key: cursor->get failed: %s", db_strerror(ret));
+    } else {
+        RETVAL = newSVpvn((char *)k.data, k.size);
+    }
+OUTPUT:
+    RETVAL
+
 
 void
 DESTROY(self)

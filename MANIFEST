@@ -7,4 +7,5 @@ MANIFEST.SKIP
 README.md
 t/30-basics.t
 t/iterator.t
+t/iterator_reset.t
 typemap
