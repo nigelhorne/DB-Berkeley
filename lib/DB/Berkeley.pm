@@ -2,6 +2,7 @@ package DB::Berkeley;
 
 use strict;
 use warnings;
+
 require XSLoader;
 
 =head1 NAME
@@ -69,16 +70,6 @@ DB_File works, I just prefer this API.
 =cut
 
 XSLoader::load('DB::Berkeley', $VERSION);
-
-sub new {
-	my ($class, %opts) = @_;
-	my $filename = $opts{Filename} or die 'Filename required';
-	my $flags    = $opts{Flags}    || 0x200000;	# DB_CREATE
-	my $mode     = $opts{Mode}     || 0644;
-
-	my $self = _open($filename, $flags, $mode);
-	bless $self, $class;
-}
 
 =head1 AUTHOR
 

@@ -9,7 +9,7 @@
 // #define DEBUG_LOG(fmt, ...) fprintf(stderr, "[DB::Berkeley DEBUG] " fmt "\n", ##__VA_ARGS__)
 #define	DEBUG_LOG(fmt, ...)
 
-/* 
+/*
  * Internal C struct to wrap a Berkeley DB handle.
  * We'll store a pointer to this inside a Perl scalar reference.
  */
