@@ -241,6 +241,43 @@ CODE:
 OUTPUT:
     RETVAL
 
+AV *
+values(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    DBC *cursor;
+    DBT k, v;
+    int ret;
+    AV *av;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+
+    ret = obj->dbp->cursor(obj->dbp, NULL, &cursor, 0);
+    if (ret != 0) {
+        croak("db->cursor failed: %s", db_strerror(ret));
+    }
+
+    av = newAV();
+
+    memset(&k, 0, sizeof(DBT));
+    memset(&v, 0, sizeof(DBT));
+
+    while ((ret = cursor->get(cursor, &k, &v, DB_NEXT)) == 0) {
+        SV *sv = newSVpvn((char *)v.data, v.size);
+        av_push(av, sv);
+    }
+
+    if (ret != DB_NOTFOUND) {
+        cursor->close(cursor);
+        croak("cursor->get failed: %s", db_strerror(ret));
+    }
+
+    cursor->close(cursor);
+    RETVAL = av;
+OUTPUT:
+    RETVAL
+
 
 void
 DESTROY(self)
