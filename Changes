@@ -1,5 +1,8 @@
 Revision history for DB::Berkeley - XS-based OO Berkeley DB HASH interface
 
+0.03
+	Remove duplicated code
+
 0.02	Wed Jul  9 15:49:47 EDT 2025
 	Added store, set and fetch alias
 

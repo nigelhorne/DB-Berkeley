@@ -45,6 +45,39 @@ _bdb_open(const char *file, u_int32_t flags, int mode) {
     return dbp;
 }
 
+static SV *
+_bdb_get(SV *self, SV *key) {
+    Berk *obj;
+    DB *dbp;
+    DBT k, v;
+    char *kptr;
+    STRLEN klen;
+    int ret;
+
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+    dbp = obj->dbp;
+
+    kptr = SvPV(key, klen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
+    v.flags = DB_DBT_MALLOC;
+
+    ret = dbp->get(dbp, NULL, &k, &v, 0);
+    if (ret == DB_NOTFOUND) {
+        return &PL_sv_undef;
+    } else if (ret != 0) {
+        croak("DB->get error: %s", db_strerror(ret));
+    }
+
+    SV *result = newSVpvn((char *)v.data, v.size);
+    free(v.data);
+    return result;
+}
+
 static int
 _bdb_put(SV *self, SV *key, SV *value) {
     Berk *obj;
@@ -113,6 +146,8 @@ CODE:
 
     if(flags&DB_RDONLY) {
     	obj->readonly = 1;
+    } else {
+    	obj->readonly = 0;
     }
 
     // Bless the object reference
@@ -137,33 +172,8 @@ SV *
 get(self, key)
     SV *self
     SV *key
-PREINIT:
-    Berk *obj;
-    DBT k, v;
-    char *kptr;
-    STRLEN klen;
-    int ret;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));
-
-    kptr = SvPV(key, klen);  // Extract raw key string
-
-    memset(&k, 0, sizeof(DBT));
-    k.data = kptr;
-    k.size = klen;
-
-    memset(&v, 0, sizeof(DBT));
-    v.flags = DB_DBT_MALLOC;  // Let DB allocate value buffer
-
-    ret = obj->dbp->get(obj->dbp, NULL, &k, &v, 0);  // Perform DB->get
-    if (ret == DB_NOTFOUND) {
-        RETVAL = &PL_sv_undef;
-    } else if (ret != 0) {
-        croak("db->get failed: %s", db_strerror(ret));
-    } else {
-        RETVAL = newSVpvn((char *)v.data, v.size);  // Return as Perl scalar
-        free(v.data);
-    }
+    RETVAL = _bdb_get(self, key);
 OUTPUT:
     RETVAL
 
@@ -428,40 +438,10 @@ SV *
 fetch(self, key)
     SV *self
     SV *key
-PREINIT:
-    Berk *obj;
-    DB *dbp;
-    DBT k, v;
-    char *kptr;
-    STRLEN klen;
-    int ret;
 CODE:
-    obj = (Berk*)SvIV((SV*)SvRV(self));
-    dbp = obj->dbp;
-
-    kptr = SvPV(key, klen);
-
-    memset(&k, 0, sizeof(DBT));
-    k.data = kptr;
-    k.size = klen;
-
-    memset(&v, 0, sizeof(DBT));
-    v.flags = DB_DBT_MALLOC;
-
-    ret = dbp->get(dbp, NULL, &k, &v, 0);
-    if (ret == DB_NOTFOUND) {
-        RETVAL = &PL_sv_undef;
-    }
-    else if (ret != 0) {
-        croak("DB->fetch error: %s", db_strerror(ret));
-    }
-    else {
-        RETVAL = newSVpvn((char*)v.data, v.size);
-        free(v.data);
-    }
+    RETVAL = _bdb_get(self, key);
 OUTPUT:
     RETVAL
-
 
 void
 DESTROY(self)
