@@ -20,6 +20,12 @@ is($db->get('foo'), 'bar', 'Retrieved correct value for key "foo"');
 
 is($db->get('missing'), undef, 'Missing key returns undef');
 
+ok($db->store("k1", "v1"), "store works");
+is($db->fetch("k1"), "v1", "fetch returns correct value");
+
+ok($db->set("fred", "wilma"), "set works");
+is($db->get('fred'), 'wilma', 'get returns correct value');
+
 done_testing();
 
 # Clean up

@@ -67,6 +67,20 @@ DB_File works, I just prefer this API.
 
     # Automatic cleanup when $db is destroyed
 
+=head1 METHODS
+
+=head2 store($key, $value)
+
+Alias for C<put>. Stores a key-value pair in the database.
+
+=head2 set($key, $value)
+
+Alias for C<set>. Stores a key-value pair in the database.
+
+=head2 fetch($key)
+
+Alias for C<get>. Retrieves a value for the given key.
+
 =cut
 
 XSLoader::load('DB::Berkeley', $VERSION);

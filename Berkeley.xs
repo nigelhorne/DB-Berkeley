@@ -390,6 +390,115 @@ CODE:
 OUTPUT:
     RETVAL
 
+int
+store(self, key, value)
+    SV *self
+    SV *key
+    SV *value
+PREINIT:
+    Berk *obj;
+    DB *dbp;
+    DBT k, v;
+    char *kptr, *vptr;
+    STRLEN klen, vlen;
+    int ret;
+CODE:
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+    dbp = obj->dbp;
+
+    kptr = SvPV(key, klen);
+    vptr = SvPV(value, vlen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
+    v.data = vptr;
+    v.size = vlen;
+
+    ret = dbp->put(dbp, NULL, &k, &v, 0);
+    if (ret != 0) {
+        croak("DB->store error: %s", db_strerror(ret));
+    }
+    RETVAL = 1;
+OUTPUT:
+    RETVAL
+
+int
+set(self, key, value)
+    SV *self
+    SV *key
+    SV *value
+PREINIT:
+    Berk *obj;
+    DB *dbp;
+    DBT k, v;
+    char *kptr, *vptr;
+    STRLEN klen, vlen;
+    int ret;
+CODE:
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+    dbp = obj->dbp;
+
+    kptr = SvPV(key, klen);
+    vptr = SvPV(value, vlen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
+    v.data = vptr;
+    v.size = vlen;
+
+    ret = dbp->put(dbp, NULL, &k, &v, 0);
+    if (ret != 0) {
+        croak("DB->set error: %s", db_strerror(ret));
+    }
+    RETVAL = 1;
+OUTPUT:
+    RETVAL
+
+SV *
+fetch(self, key)
+    SV *self
+    SV *key
+PREINIT:
+    Berk *obj;
+    DB *dbp;
+    DBT k, v;
+    char *kptr;
+    STRLEN klen;
+    int ret;
+CODE:
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+    dbp = obj->dbp;
+
+    kptr = SvPV(key, klen);
+
+    memset(&k, 0, sizeof(DBT));
+    k.data = kptr;
+    k.size = klen;
+
+    memset(&v, 0, sizeof(DBT));
+    v.flags = DB_DBT_MALLOC;
+
+    ret = dbp->get(dbp, NULL, &k, &v, 0);
+    if (ret == DB_NOTFOUND) {
+        RETVAL = &PL_sv_undef;
+    }
+    else if (ret != 0) {
+        croak("DB->fetch error: %s", db_strerror(ret));
+    }
+    else {
+        RETVAL = newSVpvn((char*)v.data, v.size);
+        free(v.data);
+    }
+OUTPUT:
+    RETVAL
+
+
 void
 DESTROY(self)
     SV *self
