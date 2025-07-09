@@ -6,6 +6,11 @@ DB::Berkeley - XS-based OO Berkeley DB HASH interface
 
 Version 0.01
 
+# DESCRIPTION
+
+A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
+DB\_File works, I just prefer this API.
+
 # SYNOPSIS
 
     use DB::Berkeley;
@@ -50,11 +55,6 @@ Version 0.01
     }
 
     # Automatic cleanup when $db is destroyed
-
-# DESCRIPTION
-
-A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
-DB\_File works, I just prefer this API.
 
 # AUTHOR
 

@@ -1,8 +1,8 @@
 ---
-# See https://github.com/actions/virtual-environments
-# https://github.com/marketplace/actions/setup-perl-environment
+# see https://github.com/FGasper/perl-github-action-tips
+# and https://github.com/actions/virtual-environments
 
-name: Test Code
+name: Test Code on Ubuntu
 on:
   push:
     branches:
@@ -10,10 +10,6 @@ on:
     tags-ignore:
       - '*'
   pull_request:
-  schedule:
-    - cron: '12 23 2 * *'
-permissions:
-  contents: read
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -21,33 +17,28 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - macos-latest
           - ubuntu-latest
-          - windows-latest
-        perl: ['5.40', '5.38', '5.36', '5.34', '5.32', '5.30', '5.28', '5.22']
-    name: Perl ${{ matrix.perl }} on ${{ matrix.os }}
+        perl-version: ['5.38', '5.36', '5.34', '5.32', '5.30', '5.28', '5.22', '5.20', '5.18', '5.16', '5.14', '5.12']
+    name: Perl ${{ matrix.perl-version }} on ${{ matrix.os }}
+
+    container:
+      image: perldocker/perl-tester:${{ matrix.perl-version }}
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Perl
-        uses: shogo82148/actions-setup-perl@v1
+      - uses: actions/checkout@main
         with:
-          perl-version: ${{ matrix.perl }}
+          submodules: recursive
+      - uses: codecov/codecov-action@v5
       - run: perl -V
+      - name: Install packages
+        run: |
+          apt update
+          apt upgrade
+          apt install libdb-dev
       - name: Install Dependencies
-        env:
-          AUTOMATED_TESTING: 1
         run: |
           cpanm -iqn ExtUtils::MakeMaker Test::Most
           cpanm -iqn --skip-satisfied --installdeps --notest .
-      - name: Make Module
-        env:
-          AUTOMATED_TESTING: 1
-          NO_NETWORK_TESTING: 1
-          NONINTERACTIVE_TESTING: 1
-        run: |
-          # find . -name build.log | xargs cat
-          perl Makefile.PL
-          make
       - name: Run Tests
         env:
           AUTOMATED_TESTING: 1

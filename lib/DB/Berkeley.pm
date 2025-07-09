@@ -16,6 +16,11 @@ Version 0.01
 
 our $VERSION = '0.01';
 
+=head1 DESCRIPTION
+
+A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
+DB_File works, I just prefer this API.
+
 =head1 SYNOPSIS
 
     use DB::Berkeley;
@@ -60,11 +65,6 @@ our $VERSION = '0.01';
     }
 
     # Automatic cleanup when $db is destroyed
-
-=head1 DESCRIPTION
-
-A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
-DB_File works, I just prefer this API.
 
 =cut
 
