@@ -7,22 +7,22 @@ use lib "$FindBin::Bin/../lib";
 
 use DB::Berkeley;
 
-my $dbfile = "test.db";
+my $dbfile = 'test.db';
 
 # Clean up any pre-existing file
 unlink $dbfile if -e $dbfile;
 
 ok(my $db = DB::Berkeley->new($dbfile, 0, 0666), 'Created DB::Berkeley object');
 
-ok($db->put("foo", "bar"), 'Inserted key "foo" with value "bar"');
+ok($db->put('foo', 'bar'), 'Inserted key "foo" with value "bar"');
 
-is($db->get("foo"), "bar", 'Retrieved correct value for key "foo"');
+is($db->get('foo'), 'bar', 'Retrieved correct value for key "foo"');
 
-is($db->get("missing"), undef, 'Missing key returns undef');
+is($db->get('missing'), undef, 'Missing key returns undef');
 
 done_testing();
 
 # Clean up
 END {
-    unlink $dbfile if -e $dbfile;
+	unlink $dbfile if -e $dbfile;
 }
