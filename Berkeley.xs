@@ -61,8 +61,9 @@ _bdb_open(const char *file, u_int32_t flags, int mode)
 }
 
 static SV *
-_bdb_get(SV *self, SV *key) {
-    Berk *obj;
+_bdb_get(SV *self, SV *key)
+{
+    const Berk *obj;
     DB *dbp;
     DBT k, v;
     char *kptr;
@@ -434,7 +435,7 @@ CODE:
         obj->cursor->close(obj->cursor);
         obj->cursor = NULL;
 	obj->iteration_done = 1;
-	    DEBUG_LOG("end() end of loop");
+		DEBUG_LOG("end() end of loop");
 	XSRETURN_EMPTY;
     } else if (ret != 0) {
         croak("each: cursor->get failed: %s", db_strerror(ret));
@@ -481,7 +482,7 @@ int
 sync(self)
     SV *self
 PREINIT:
-    Berk *obj;
+    const Berk *obj;
     DB *dbp;
     int ret;
 CODE:
@@ -524,7 +525,7 @@ SV *
 iterator(self)
     SV *self
 PREINIT:
-    Berk *obj;
+    const Berk *obj;
     BerkIter *it;
     SV *ret;
     int retcode;
@@ -576,59 +577,59 @@ MODULE = DB::Berkeley     PACKAGE = DB::Berkeley::Iterator
 
 SV *
 each(self)
-    SV *self
+	SV *self
 PREINIT:
-    BerkIter *it;
-    DBT k, v;
-    AV *av;
-    int ret;
+	BerkIter *it;
+	DBT k, v;
+	AV *av;
+	int ret;
 CODE:
-    it = (BerkIter *)SvIV(SvRV(self));
+	it = (BerkIter *)SvIV(SvRV(self));
 
-    memset(&k, 0, sizeof(DBT));
-    memset(&v, 0, sizeof(DBT));
-    v.flags = DB_DBT_MALLOC;
+	memset(&k, 0, sizeof(DBT));
+	memset(&v, 0, sizeof(DBT));
+	v.flags = DB_DBT_MALLOC;
 
-    ret = it->cursor->get(it->cursor, &k, &v, DB_NEXT);
-    if (ret == DB_NOTFOUND) {
-        RETVAL = &PL_sv_undef;
-    } else if (ret != 0) {
-        croak("each(): cursor get failed: %s", db_strerror(ret));
-    } else {
-        av = newAV();
-        av_push(av, newSVpvn((char*)k.data, k.size));
-        av_push(av, newSVpvn((char*)v.data, v.size));
-        free(v.data);
-        RETVAL = newRV_noinc((SV*)av);
-    }
+	ret = it->cursor->get(it->cursor, &k, &v, DB_NEXT);
+	if (ret == DB_NOTFOUND) {
+		RETVAL = &PL_sv_undef;
+	} else if (ret != 0) {
+		croak("each(): cursor get failed: %s", db_strerror(ret));
+	} else {
+		av = newAV();
+		av_push(av, newSVpvn((char *)k.data, k.size));
+		av_push(av, newSVpvn((char *)v.data, v.size));
+		free(v.data);
+		RETVAL = newRV_noinc((SV *)av);
+	}
 OUTPUT:
-    RETVAL
+	RETVAL
 
 void
 iterator_reset(self)
-    SV *self
+	SV *self
 PREINIT:
-    BerkIter *iter;
-    int ret;
+	BerkIter *iter;
+	int ret;
 CODE:
-    iter = (BerkIter *)SvIV(SvRV(self));
-    if (iter->cursor) {
-        iter->cursor->close(iter->cursor);
-        iter->cursor = NULL;
-    }
-    ret = iter->dbp->cursor(iter->dbp, NULL, &iter->cursor, 0);
-    if (ret != 0) {
-        croak("iterator_reset: cursor creation failed: %s", db_strerror(ret));
-    }
+	iter = (BerkIter *)SvIV(SvRV(self));
+	if (iter->cursor) {
+		iter->cursor->close(iter->cursor);
+		iter->cursor = NULL;
+	}
+	ret = iter->dbp->cursor(iter->dbp, NULL, &iter->cursor, 0);
+	if (ret != 0) {
+		croak("iterator_reset: cursor creation failed: %s", db_strerror(ret));
+	}
 
 void
 DESTROY(self)
-    SV *self
+	SV *self
 PREINIT:
-    BerkIter *it;
+	BerkIter *it;
 CODE:
-    it = (BerkIter *)SvIV(SvRV(self));
-    if (it->cursor) {
-        it->cursor->close(it->cursor);
-    }
-    free(it);
+	it = (BerkIter *)SvIV(SvRV(self));
+	if (it->cursor) {
+		it->cursor->close(it->cursor);
+	}
+	free(it);
