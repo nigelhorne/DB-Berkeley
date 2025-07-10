@@ -474,6 +474,25 @@ CODE:
 OUTPUT:
     RETVAL
 
+int
+sync_on_put(self, newval = -1)
+    SV *self
+    int newval
+PREINIT:
+    Berk *obj;
+CODE:
+{
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+
+    if (newval != -1) {
+        obj->sync_on_put = newval ? 1 : 0;
+    }
+
+    RETVAL = obj->sync_on_put;
+}
+OUTPUT:
+    RETVAL
+
 void
 DESTROY(self)
     SV *self

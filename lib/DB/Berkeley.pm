@@ -100,6 +100,13 @@ Useful for ensuring durability between critical updates.
 Returns true on success.
 Croaks on error.
 
+=head2 sync_on_put
+
+    $db->sync_on_put(1);     # Enable syncing on put
+    my $flag = $db->sync_on_put();  # Check current status
+
+Get or set whether C<put()> operations immediately flush to disk via C<sync()>.
+
 =head1 AUTHOR
 
 Nigel Horne, C<< <njh at nigelhorne.com> >>

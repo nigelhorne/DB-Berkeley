@@ -18,4 +18,6 @@ t/iterator_reset.t
 t/pod-synopsis.t
 t/storable.t
 t/sync.t
+t/sync_flag.t
+t/sync_on_put.t
 typemap

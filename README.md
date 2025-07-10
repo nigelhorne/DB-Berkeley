@@ -58,6 +58,13 @@ DB\_File works, I just prefer this API.
 
 # METHODS
 
+## new
+
+    my $db = DB::Berkeley->new($filename, $flags, $mode, $sync_on_put);
+
+Creates and opens a new Berkeley DB file.
+If `$sync_on_put` is true, every `put()` will automatically call `sync()` to flush to disk.
+
 ## store($key, $value)
 
 Alias for `put`. Stores a key-value pair in the database.
@@ -79,6 +86,13 @@ Useful for ensuring durability between critical updates.
 
 Returns true on success.
 Croaks on error.
+
+## sync\_on\_put
+
+    $db->sync_on_put(1);     # Enable syncing on put
+    my $flag = $db->sync_on_put();  # Check current status
+
+Get or set whether `put()` operations immediately flush to disk via `sync()`.
 
 # AUTHOR
 
