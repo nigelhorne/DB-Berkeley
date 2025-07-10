@@ -125,6 +125,7 @@ Nigel Horne, `<njh at nigelhorne.com>`
 
 # SEE ALSO
 
+- [BerkeleyDB](https://metacpan.org/pod/BerkeleyDB)
 - [DB\_File](https://metacpan.org/pod/DB_File)
 
 # REPOSITORY

@@ -144,6 +144,8 @@ Nigel Horne, C<< <njh at nigelhorne.com> >>
 
 =over 4
 
+=item * L<BerkeleyDB>
+
 =item * L<DB_File>
 
 =back
