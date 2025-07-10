@@ -70,6 +70,16 @@ Alias for `set`. Stores a key-value pair in the database.
 
 Alias for `get`. Retrieves a value for the given key.
 
+## sync
+
+    $db->sync();
+
+Flushes all pending writes to disk.
+Useful for ensuring durability between critical updates.
+
+Returns true on success.
+Croaks on error.
+
 # AUTHOR
 
 Nigel Horne, `<njh at nigelhorne.com>`

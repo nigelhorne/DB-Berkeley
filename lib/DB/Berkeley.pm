@@ -83,6 +83,16 @@ Alias for C<set>. Stores a key-value pair in the database.
 
 Alias for C<get>. Retrieves a value for the given key.
 
+=head2 sync
+
+    $db->sync();
+
+Flushes all pending writes to disk.
+Useful for ensuring durability between critical updates.
+
+Returns true on success.
+Croaks on error.
+
 =head1 AUTHOR
 
 Nigel Horne, C<< <njh at nigelhorne.com> >>

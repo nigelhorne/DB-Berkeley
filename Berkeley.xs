@@ -443,6 +443,27 @@ CODE:
 OUTPUT:
     RETVAL
 
+int
+sync(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    DB *dbp;
+    int ret;
+CODE:
+{
+    obj = (Berk*)SvIV((SV*)SvRV(self));
+    dbp = obj->dbp;
+
+    ret = dbp->sync(dbp, 0);
+    if (ret != 0) {
+        croak("DB->sync error: %s", db_strerror(ret));
+    }
+    RETVAL = 1;
+}
+OUTPUT:
+    RETVAL
+
 void
 DESTROY(self)
     SV *self
