@@ -190,6 +190,10 @@ PREINIT:
     int ret;
 CODE:
     obj = (Berk*)SvIV(SvRV(self));
+
+    if(obj->readonly) {
+        croak("DB is opened read-only; cannot perform put operation");
+    }
     dbp = obj->dbp;
     kptr = SvPV(key, klen);
 
