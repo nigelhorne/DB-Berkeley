@@ -94,6 +94,31 @@ Alias for C<set>. Stores a key-value pair in the database.
 
 Alias for C<get>. Retrieves a value for the given key.
 
+=head2 iterator
+
+    my $iter = $db->iterator;
+
+Returns a L<DB::Berkeley::Iterator> object which can be used to iterate over
+all key/value pairs in the database.
+
+This allows you to write iterator-style loops:
+
+    my $iter = $db->iterator;
+
+    while (my $pair = $iter->each()) {
+        my ($key, $value) = @{$pair};
+        print "Key: $key, Value: $value\n";
+    }
+
+You can reset the iterator using:
+
+    $iter->iterator_reset();
+
+Note that calling C<each()> or other iteration methods directly on the C<$db> object
+will use an internal cursor that is separate from the object returned by C<iterator()>.
+
+This is especially useful for nested iteration or concurrent traversal contexts.
+
 =head2 sync
 
     $db->sync();

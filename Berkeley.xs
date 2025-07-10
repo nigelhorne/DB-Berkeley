@@ -21,6 +21,11 @@ typedef struct {
 	int	iteration_done;	// Reached the end of an each() loop
 } Berk;
 
+typedef struct {
+	DBC *cursor;
+	DB *dbp;
+} BerkIter;
+
 /*
  * Helper function to open a Berkeley DB file as a HASH.
  * Takes filename, flags, and mode.
@@ -515,6 +520,34 @@ CODE:
 OUTPUT:
     RETVAL
 
+SV *
+iterator(self)
+    SV *self
+PREINIT:
+    Berk *obj;
+    BerkIter *it;
+    SV *ret;
+    int retcode;
+CODE:
+    obj = (Berk *)SvIV(SvRV(self));
+
+    it = malloc(sizeof(BerkIter));
+    if (!it) croak("Out of memory");
+
+    it->dbp = obj->dbp;
+    it->cursor = NULL;
+
+    retcode = obj->dbp->cursor(obj->dbp, NULL, &it->cursor, 0);
+    if (retcode != 0) {
+        free(it);
+        croak("iterator: cursor creation failed: %s", db_strerror(retcode));
+    }
+
+    ret = sv_setref_pv(newSV(0), "DB::Berkeley::Iterator", (void*)it);
+    RETVAL = ret;
+OUTPUT:
+    RETVAL
+
 void
 DESTROY(self)
 	SV *self
@@ -538,3 +571,64 @@ CODE:
 		free(obj);  // Free the struct
 	}
 	DEBUG_LOG("DESTROY() left");
+
+MODULE = DB::Berkeley     PACKAGE = DB::Berkeley::Iterator
+
+SV *
+each(self)
+    SV *self
+PREINIT:
+    BerkIter *it;
+    DBT k, v;
+    AV *av;
+    int ret;
+CODE:
+    it = (BerkIter *)SvIV(SvRV(self));
+
+    memset(&k, 0, sizeof(DBT));
+    memset(&v, 0, sizeof(DBT));
+    v.flags = DB_DBT_MALLOC;
+
+    ret = it->cursor->get(it->cursor, &k, &v, DB_NEXT);
+    if (ret == DB_NOTFOUND) {
+        RETVAL = &PL_sv_undef;
+    } else if (ret != 0) {
+        croak("each(): cursor get failed: %s", db_strerror(ret));
+    } else {
+        av = newAV();
+        av_push(av, newSVpvn((char*)k.data, k.size));
+        av_push(av, newSVpvn((char*)v.data, v.size));
+        free(v.data);
+        RETVAL = newRV_noinc((SV*)av);
+    }
+OUTPUT:
+    RETVAL
+
+void
+iterator_reset(self)
+    SV *self
+PREINIT:
+    BerkIter *iter;
+    int ret;
+CODE:
+    iter = (BerkIter *)SvIV(SvRV(self));
+    if (iter->cursor) {
+        iter->cursor->close(iter->cursor);
+        iter->cursor = NULL;
+    }
+    ret = iter->dbp->cursor(iter->dbp, NULL, &iter->cursor, 0);
+    if (ret != 0) {
+        croak("iterator_reset: cursor creation failed: %s", db_strerror(ret));
+    }
+
+void
+DESTROY(self)
+    SV *self
+PREINIT:
+    BerkIter *it;
+CODE:
+    it = (BerkIter *)SvIV(SvRV(self));
+    if (it->cursor) {
+        it->cursor->close(it->cursor);
+    }
+    free(it);
