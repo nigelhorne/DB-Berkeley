@@ -3,6 +3,7 @@ package DB::Berkeley;
 use strict;
 use warnings;
 
+use Exporter 'import';
 require XSLoader;
 
 =head1 NAME
@@ -16,6 +17,9 @@ Version 0.02
 =cut
 
 our $VERSION = '0.02';
+
+our @EXPORT_OK = qw(DB_RDONLY);
+use constant DB_RDONLY => 0x00000400;	# Must be the same as in db.h
 
 XSLoader::load('DB::Berkeley', $VERSION);
 

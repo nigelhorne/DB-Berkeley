@@ -26,24 +26,32 @@ typedef struct {
  * Dies (croaks) on failure.
  */
 static DB *
-_bdb_open(const char *file, u_int32_t flags, int mode) {
-    DB *dbp;
-    int ret;
+_bdb_open(const char *file, u_int32_t flags, int mode)
+{
+	DB *dbp;
+	int ret;
 
-    // Create the database handle
-    ret = db_create(&dbp, NULL, 0);
-    if (ret != 0) {
-        croak("db_create failed: %s", db_strerror(ret));
-    }
+	// Create the database handle
+	ret = db_create(&dbp, NULL, 0);
+	if (ret != 0) {
+		croak("db_create failed: %s", db_strerror(ret));
+	}
 
-    // Open the database file as a HASH type
-    ret = dbp->open(dbp, NULL, file, NULL, DB_HASH, flags | DB_CREATE, mode);
-    if (ret != 0) {
-        dbp->close(dbp, 0);
-        croak("db->open failed: %s", db_strerror(ret));
-    }
+	// Open the database file as a HASH type
+	if (flags & DB_RDONLY) {
+		// Do NOT include DB_CREATE
+		ret = dbp->open(dbp, NULL, file, NULL, DB_HASH, flags, mode);
+	} else {
+		// Include DB_CREATE for writeable DBs
+		ret = dbp->open(dbp, NULL, file, NULL, DB_HASH, flags | DB_CREATE, mode);
+	}
 
-    return dbp;
+	if (ret != 0) {
+		dbp->close(dbp, 0);
+		croak("db->open failed: %s", db_strerror(ret));
+	}
+
+	return dbp;
 }
 
 static SV *
