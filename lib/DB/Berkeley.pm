@@ -12,11 +12,11 @@ DB::Berkeley - XS-based OO Berkeley DB HASH interface
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 our @EXPORT_OK = qw(DB_RDONLY);
 use constant DB_RDONLY => 0x00000400;	# Must be the same as in db.h
@@ -209,4 +209,3 @@ The licence terms of this software are as follows:
 =cut
 
 1;
-

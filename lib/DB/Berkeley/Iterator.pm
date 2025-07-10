@@ -11,11 +11,11 @@ DB::Berkeley::Iterator - Iterator for Berkeley DB key/value pairs
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 XSLoader::load('DB::Berkeley::Iterator', $VERSION);
 
@@ -63,10 +63,24 @@ in the database.
 
 =head1 AUTHOR
 
-Nigel Horne
+Nigel Horne, C<< <njh at nigelhorne.com> >>
 
-=head1 LICENSE
+=head1 LICENCE AND COPYRIGHT
 
-This module is released under the same terms as Perl itself.
+Copyright 2025 Nigel Horne.
+
+Usage is subject to licence terms.
+
+The licence terms of this software are as follows:
+
+=over 4
+
+=item * Personal single user, single computer use: GPL2
+
+=item * All other users (including Commercial, Charity, Educational, Government)
+  must apply in writing for a licence for use from Nigel Horne at the
+  above e-mail.
+
+=back
 
 =cut

@@ -4,7 +4,7 @@ DB::Berkeley - XS-based OO Berkeley DB HASH interface
 
 # VERSION
 
-Version 0.02
+Version 0.03
 
 # DESCRIPTION
 
