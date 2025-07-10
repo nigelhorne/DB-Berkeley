@@ -77,6 +77,31 @@ Alias for `set`. Stores a key-value pair in the database.
 
 Alias for `get`. Retrieves a value for the given key.
 
+## iterator
+
+    my $iter = $db->iterator;
+
+Returns a [DB::Berkeley::Iterator](https://metacpan.org/pod/DB%3A%3ABerkeley%3A%3AIterator) object which can be used to iterate over
+all key/value pairs in the database.
+
+This allows you to write iterator-style loops:
+
+    my $iter = $db->iterator;
+
+    while (my $pair = $iter->each()) {
+        my ($key, $value) = @{$pair};
+        print "Key: $key, Value: $value\n";
+    }
+
+You can reset the iterator using:
+
+    $iter->iterator_reset();
+
+Note that calling `each()` or other iteration methods directly on the `$db` object
+will use an internal cursor that is separate from the object returned by `iterator()`.
+
+This is especially useful for nested iteration or concurrent traversal contexts.
+
 ## sync
 
     $db->sync();
