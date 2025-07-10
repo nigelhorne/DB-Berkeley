@@ -151,9 +151,9 @@ CODE:
     obj->sync_on_put = sync_on_put;
 
     if(flags&DB_RDONLY) {
-    	obj->readonly = 1;
+	obj->readonly = 1;
     } else {
-    	obj->readonly = 0;
+	obj->readonly = 0;
     }
 
     // Bless the object reference
@@ -495,24 +495,24 @@ OUTPUT:
 
 void
 DESTROY(self)
-    SV *self
+	SV *self
 PREINIT:
-    Berk *obj;
-    int ret;
+	Berk *obj;
+	int ret;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));
-    DEBUG_LOG("DESTROY() called");
-    if (obj) {
-        if (obj->cursor) {
-	    DEBUG_LOG("DESTROY() closing cursor");
-            obj->cursor->close(obj->cursor);
-            obj->cursor = NULL;
-        }
-        if (obj->dbp) {
-	    DEBUG_LOG("DESTROY() closing handle");
-            obj->dbp->close(obj->dbp, 0);  // Close DB handle
-        }
-	DEBUG_LOG("DESTROY() freeing the structure");
-        free(obj);  // Free the struct
-    }
-    DEBUG_LOG("DESTROY() left");
+	obj = (Berk *)SvIV(SvRV(self));
+	DEBUG_LOG("DESTROY() called");
+	if (obj) {
+		if (obj->cursor) {
+			DEBUG_LOG("DESTROY() closing cursor");
+			obj->cursor->close(obj->cursor);
+			obj->cursor = NULL;
+		}
+		if (obj->dbp) {
+			DEBUG_LOG("DESTROY() closing handle");
+			obj->dbp->close(obj->dbp, 0);  // Close DB handle
+		}
+		DEBUG_LOG("DESTROY() freeing the structure");
+		free(obj);  // Free the struct
+	}
+	DEBUG_LOG("DESTROY() left");
