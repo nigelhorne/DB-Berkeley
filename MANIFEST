@@ -15,6 +15,7 @@ t/eol.t
 t/iterator.t
 t/iterator_more.t
 t/iterator_reset.t
+t/iterator_reset_more.t
 t/pod-synopsis.t
 t/readonly.t
 t/storable.t

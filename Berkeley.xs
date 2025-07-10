@@ -18,6 +18,7 @@ typedef struct {
 	DBC	*cursor; // for iterator
 	int	readonly;
 	int	sync_on_put; /* boolean flag */
+	int	iteration_done;	// Reached the end of an each() loop
 } Berk;
 
 /*
@@ -156,6 +157,7 @@ CODE:
     }
     obj->dbp = dbp;
     obj->cursor = NULL;
+    obj->iteration_done = 0;
     obj->sync_on_put = sync_on_put;
 
     if(flags&DB_RDONLY) {
@@ -358,6 +360,7 @@ CODE:
         obj->cursor->close(obj->cursor);
         obj->cursor = NULL;
     }
+    obj->iteration_done = 0;
 
     ret = obj->dbp->cursor(obj->dbp, NULL, &obj->cursor, 0);
     if (ret != 0) {
@@ -403,6 +406,12 @@ PREINIT:
 CODE:
     obj = (Berk *)SvIV(SvRV(self));
 
+    if(obj->iteration_done) {
+	DEBUG_LOG("end() attempt to read beyond end of loop");
+	XSRETURN_EMPTY;
+	return;
+    }
+
     if (!obj->cursor) {
         // First call to each() – create cursor
         ret = obj->dbp->cursor(obj->dbp, NULL, &obj->cursor, 0);
@@ -419,7 +428,9 @@ CODE:
     if (ret == DB_NOTFOUND) {
         obj->cursor->close(obj->cursor);
         obj->cursor = NULL;
-        RETVAL = &PL_sv_undef;
+	obj->iteration_done = 1;
+	    DEBUG_LOG("end() end of loop");
+	XSRETURN_EMPTY;
     } else if (ret != 0) {
         croak("each: cursor->get failed: %s", db_strerror(ret));
     } else {
