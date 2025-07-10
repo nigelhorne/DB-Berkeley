@@ -1,3 +1,4 @@
+bench/compare.pl
 Berkeley.xs
 Changes
 lib/DB/Berkeley.pm

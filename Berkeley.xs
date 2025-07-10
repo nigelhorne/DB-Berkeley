@@ -435,7 +435,9 @@ CODE:
         obj->cursor->close(obj->cursor);
         obj->cursor = NULL;
 	obj->iteration_done = 1;
-		DEBUG_LOG("end() end of loop");
+
+	DEBUG_LOG("end() end of loop");
+
 	XSRETURN_EMPTY;
     } else if (ret != 0) {
         croak("each: cursor->get failed: %s", db_strerror(ret));
