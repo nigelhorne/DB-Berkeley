@@ -206,7 +206,7 @@ CODE:
     obj = (Berk*)SvIV(SvRV(self));
 
     if(obj->readonly) {
-        croak("DB is opened read-only; cannot perform put operation");
+        croak("DB is opened read-only; cannot perform delete operation");
     }
     dbp = obj->dbp;
     kptr = SvPV(key, klen);
@@ -473,6 +473,9 @@ CODE:
     obj = (Berk*)SvIV((SV*)SvRV(self));
     dbp = obj->dbp;
 
+    if(obj->readonly) {
+        croak("DB is opened read-only; cannot perform sync operation");
+    }
     ret = dbp->sync(dbp, 0);
     if (ret != 0) {
         croak("DB->sync error: %s", db_strerror(ret));

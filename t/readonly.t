@@ -1,38 +1,42 @@
 use strict;
 use warnings;
-
-use DB::Berkeley qw(DB_RDONLY);
-use File::Temp qw(tempfile);
 use Test::Most;
+use DB::Berkeley qw(DB_RDONLY);
 
-# Create a valid DB file first in read-write mode
-my ($fh, $file) = tempfile(SUFFIX => '.db');
-close $fh;
+my $file = 't/readonly.db';
 unlink $file if -e $file;
 
-# Step 1: Create and write to the database
+# Create and populate DB
 {
 	my $db = DB::Berkeley->new($file, 0, 0600);
-
-	ok($db->put('foo', 'bar'), 'Initial put() succeeded');
-	is($db->get('foo'), 'bar', 'Initial get() returned correct value');
+	$db->put('key1', 'value1');
+	$db->put('key2', 'value2');
 	$db->sync();
-
-	undef $db; # Close and flush
+	undef $db;
 }
 
-# Step 2: Reopen in read-only mode using exported DB_RDONLY
-my $db_ro = DB::Berkeley->new($file, DB_RDONLY, 0600);
-ok($db_ro, 'Opened DB in read-only mode');
-is($db_ro->get('foo'), 'bar', 'get() works in read-only mode');
+# Open in read-only mode
+my $ro = DB::Berkeley->new($file, DB_RDONLY, 0600);
 
-# Step 3: Verify that put fails
-throws_ok {
-	$db_ro->put('baz', 'qux');
-} qr/permission|read-only|Read-only|Invalid|EINVAL/i, 'put() in read-only mode croaks with permission error';
+# Sanity check: read access works
+is($ro->get('key1'), 'value1', 'Can read key1 in read-only mode');
+ok($ro->exists('key2'), 'Can check existence in read-only mode');
+
+# Assert that write methods croak
+my @write_methods = (
+	[ put   => sub { $ro->put('key3', 'value3') } ],
+	[ store => sub { $ro->store('key3', 'value3') } ],
+	[ delete => sub { $ro->delete('key2') } ],
+	[ sync  => sub { $ro->sync() } ],
+);
+
+foreach my $test (@write_methods) {
+	my ($name, $code) = @$test;
+	throws_ok(\&{$code}, qr/(permission|read-only|EINVAL|Invalid|EPERM)/i, "$name() in read-only mode croaks with permission error");
+}
 
 done_testing();
 
 END {
-    unlink $file if -e $file;
+	unlink $file if -e $file;
 }
