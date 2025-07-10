@@ -17,6 +17,7 @@ typedef struct {
 	DB	*dbp;  // Pointer to Berkeley DB handle
 	DBC	*cursor; // for iterator
 	int	readonly;
+	int	sync_on_put; /* boolean flag */
 } Berk;
 
 /*
@@ -109,6 +110,9 @@ _bdb_put(SV *self, SV *key, SV *value) {
     if (ret != 0) {
         croak("DB->put error: %s", db_strerror(ret));
     }
+	if (obj->sync_on_put) {
+		dbp->sync(dbp, 0);
+	}
 
     return 1;
 }
@@ -117,11 +121,12 @@ MODULE = DB::Berkeley    PACKAGE = DB::Berkeley
 PROTOTYPES: ENABLE
 
 SV *
-new(class, file, flags, mode)
+new(class, file, flags, mode, sync_on_put = 0)
     char *class
     char *file
     int flags
     int mode
+    int sync_on_put
 PREINIT:
     Berk *obj;
     DB *dbp;
@@ -143,6 +148,7 @@ CODE:
     }
     obj->dbp = dbp;
     obj->cursor = NULL;
+    obj->sync_on_put = sync_on_put;
 
     if(flags&DB_RDONLY) {
     	obj->readonly = 1;

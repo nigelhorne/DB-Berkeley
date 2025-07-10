@@ -71,6 +71,13 @@ DB_File works, I just prefer this API.
 
 =head1 METHODS
 
+=head2 new
+
+    my $db = DB::Berkeley->new($filename, $flags, $mode, $sync_on_put);
+
+Creates and opens a new Berkeley DB file.
+If C<$sync_on_put> is true, every C<put()> will automatically call C<sync()> to flush to disk.
+
 =head2 store($key, $value)
 
 Alias for C<put>. Stores a key-value pair in the database.
