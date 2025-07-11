@@ -137,8 +137,8 @@ PROTOTYPES: ENABLE
 
 SV *
 new(class, file, flags, mode, sync_on_put = 0)
-    char *class
-    char *file
+    const char *class
+    const char *file
     int flags
     int mode
     int sync_on_put
@@ -525,31 +525,31 @@ OUTPUT:
 
 SV *
 iterator(self)
-    SV *self
+	SV *self
 PREINIT:
-    const Berk *obj;
-    BerkIter *it;
-    SV *ret;
-    int retcode;
+	const Berk *obj;
+	BerkIter *it;
+	SV *ret;
+	int retcode;
 CODE:
-    obj = (Berk *)SvIV(SvRV(self));
+	obj = (Berk *)SvIV(SvRV(self));
 
-    it = malloc(sizeof(BerkIter));
-    if (!it) croak("Out of memory");
+	it = malloc(sizeof(BerkIter));
+	if (!it) croak("Out of memory");
 
-    it->dbp = obj->dbp;
-    it->cursor = NULL;
+	it->dbp = obj->dbp;
+	it->cursor = NULL;
 
-    retcode = obj->dbp->cursor(obj->dbp, NULL, &it->cursor, 0);
-    if (retcode != 0) {
-        free(it);
-        croak("iterator: cursor creation failed: %s", db_strerror(retcode));
-    }
+	retcode = obj->dbp->cursor(obj->dbp, NULL, &it->cursor, 0);
+	if(retcode != 0) {
+		free(it);
+		croak("iterator: cursor creation failed: %s", db_strerror(retcode));
+	}
 
-    ret = sv_setref_pv(newSV(0), "DB::Berkeley::Iterator", (void*)it);
-    RETVAL = ret;
+	ret = sv_setref_pv(newSV(0), "DB::Berkeley::Iterator", (void*)it);
+	RETVAL = ret;
 OUTPUT:
-    RETVAL
+	RETVAL
 
 void
 DESTROY(self)
