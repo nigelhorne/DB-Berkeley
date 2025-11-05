@@ -26,7 +26,7 @@ XSLoader::load('DB::Berkeley', $VERSION);
 =head1 DESCRIPTION
 
 A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
-DB_File works, I just prefer this API.
+L<DB_File> works, I just prefer this API.
 
 =head1 SYNOPSIS
 

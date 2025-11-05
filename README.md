@@ -9,7 +9,7 @@ Version 0.03
 # DESCRIPTION
 
 A lightweight XS wrapper around Berkeley DB using HASH format, without using tie().
-DB\_File works, I just prefer this API.
+[DB\_File](https://metacpan.org/pod/DB_File) works, I just prefer this API.
 
 # SYNOPSIS
 
